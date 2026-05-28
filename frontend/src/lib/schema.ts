@@ -7,11 +7,19 @@ import { z } from "zod";
 import { deployedAddresses } from "../contracts/deployedAddresses";
 
 export const SCHEMA_REGISTRY_CONTRACT_ID = deployedAddresses.schemaRegistry;
-export const ATTESTATION_ENGINE_V2_CONTRACT_ID = deployedAddresses.attestationEngineV2;
+export const ATTESTATION_ENGINE_V2_CONTRACT_ID =
+  deployedAddresses.attestationEngineV2;
 /** @deprecated Old-era name; use SCHEMA_REGISTRY_CONTRACT_ID */
 export const SCHEMA_REGISTRY_PROGRAM_ID = SCHEMA_REGISTRY_CONTRACT_ID;
 
-export type FieldType = "bool" | "u8" | "u16" | "u32" | "u64" | "string" | "pubkey";
+export type FieldType =
+  | "bool"
+  | "u8"
+  | "u16"
+  | "u32"
+  | "u64"
+  | "string"
+  | "pubkey";
 
 export interface FieldDef {
   id: string;
@@ -41,7 +49,9 @@ export function parseFieldDefs(fieldDefs: string): FieldDef[] {
   return fieldDefs.split(",").map((part, i) => {
     const trimmed = part.trim();
     const spaceIdx = trimmed.indexOf(" ");
-    const type = (spaceIdx === -1 ? "string" : trimmed.slice(0, spaceIdx)) as FieldType;
+    const type = (
+      spaceIdx === -1 ? "string" : trimmed.slice(0, spaceIdx)
+    ) as FieldType;
     const name = spaceIdx === -1 ? trimmed : trimmed.slice(spaceIdx + 1);
     return { id: String(i), name: name.trim(), type: type.trim() as FieldType };
   });
@@ -78,7 +88,7 @@ export async function computeSchemaId(
 }
 
 /** Estimated XLM reserve hint for schema registration UI */
-export const SCHEMA_RENT_LAMPORTS = 10_000_000n;
+export const SCHEMA_RENT_STROOPS = 10_000_000n;
 
 export const SchemaV2Schema = z.object({
   address: z.string(),
@@ -102,10 +112,17 @@ export async function prepareRegisterSchema(
   name: string,
 ): Promise<{ schemaId: Uint8Array; schemaKey: string }> {
   const schemaId = await computeSchemaId(authority, name, 1);
-  const schemaKey = `${authority}:${Array.from(schemaId).map((b) => b.toString(16).padStart(2, "0")).join("")}`;
+  const schemaKey = `${authority}:${Array.from(schemaId)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")}`;
   return { schemaId, schemaKey };
 }
 
 export function packSchemaIdToField(schemaId: Uint8Array): string {
-  return "0x" + Array.from(schemaId).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return (
+    "0x" +
+    Array.from(schemaId)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("")
+  );
 }
