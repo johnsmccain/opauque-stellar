@@ -7,6 +7,12 @@
  */
 
 export type StellarNetwork = "testnet" | "futurenet" | "mainnet" | "local";
+export const STELLAR_NETWORKS: readonly StellarNetwork[] = [
+  "testnet",
+  "futurenet",
+  "mainnet",
+  "local",
+];
 
 export const NETWORK_PASSPHRASES: Record<StellarNetwork, string> = {
   testnet: "Test SDF Network ; September 2015",
@@ -31,12 +37,21 @@ export const HORIZON_ENDPOINTS: Record<StellarNetwork, string> = {
 
 let rpcWarnLogged = false;
 
-export function getNetwork(): StellarNetwork {
-  const raw = import.meta.env.VITE_STELLAR_NETWORK as string | undefined;
+export function getConfiguredNetwork(): StellarNetwork | null {
+  const raw = (import.meta.env.VITE_STELLAR_NETWORK as string | undefined)?.trim();
+  if (!raw) return "testnet";
   if (raw === "testnet" || raw === "futurenet" || raw === "mainnet" || raw === "local") {
     return raw;
   }
-  return "testnet";
+  return null;
+}
+
+export function getNetworkEnvValue(): string {
+  return (import.meta.env.VITE_STELLAR_NETWORK as string | undefined)?.trim() || "testnet";
+}
+
+export function getNetwork(): StellarNetwork {
+  return getConfiguredNetwork() ?? "testnet";
 }
 
 export function getRpcUrl(): string {
