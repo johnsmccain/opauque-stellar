@@ -17,8 +17,14 @@ export default defineConfig({
   resolve: {
     alias: {
       '@wasm': path.resolve(__dirname, 'public/pkg'),
+      '@deployments': path.resolve(__dirname, '../deployments'),
       buffer: 'buffer',
       process: 'process/browser',
+    },
+  },
+  server: {
+    fs: {
+      allow: [path.resolve(__dirname, '..')],
     },
   },
   optimizeDeps: {

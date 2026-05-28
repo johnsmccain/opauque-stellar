@@ -2,12 +2,15 @@
  * Stellar Soroban contract configuration per network.
  */
 
+import { DEPLOYMENT_MANIFESTS } from "@deployments/index";
 import type { StellarNetwork } from "../lib/chain";
 import {
   deployedAddresses,
-  CONTRACT_ENV_KEYS,
   PLACEHOLDER_CONTRACT_ID,
+  contractEnvKeysForNetwork,
 } from "./deployedAddresses";
+import { isValidStellarContractId } from "./deploymentManifest";
+import { CONTRACT_KEYS, manifestContractIds } from "@deployments/types";
 
 export type ClusterProgramConfig = {
   registryContract: string;
@@ -51,19 +54,32 @@ function getEnvValue(key: string): string {
   return (import.meta.env[key] as string | undefined)?.trim() ?? "";
 }
 
-function isValidContractId(value: string): boolean {
-  return /^C[A-Z2-7]{55}$/.test(value);
-}
-
-function hasExplicitMainnetContracts(): boolean {
-  return CONTRACT_ENV_KEYS.every((key) => {
-    const value = getEnvValue(key);
+function allContractsValid(ids: Record<string, string>): boolean {
+  return CONTRACT_KEYS.every((key) => {
+    const value = ids[key];
     return (
       value.length > 0 &&
       value !== PLACEHOLDER_CONTRACT_ID &&
-      isValidContractId(value)
+      isValidStellarContractId(value)
     );
   });
+}
+
+function hasExplicitMainnetContracts(): boolean {
+  const fromEnv = Object.fromEntries(
+    contractEnvKeysForNetwork("mainnet").map((envKey, i) => [
+      CONTRACT_KEYS[i],
+      getEnvValue(envKey),
+    ]),
+  ) as Record<(typeof CONTRACT_KEYS)[number], string>;
+
+  if (allContractsValid(fromEnv)) return true;
+
+  const fromManifest = manifestContractIds(DEPLOYMENT_MANIFESTS.mainnet);
+  return (
+    DEPLOYMENT_MANIFESTS.mainnet.deploymentStatus === "deployed" &&
+    allContractsValid(fromManifest)
+  );
 }
 
 function hasProductionMainnetRpc(): boolean {
@@ -123,7 +139,7 @@ export function isClusterSupported(network: StellarNetwork | null | undefined): 
 
 export function getNetworkSupportMessage(network: StellarNetwork | null | undefined): string {
   if (network === "mainnet") {
-    return "Mainnet requires VITE_STELLAR_RPC_URL to point to a production HTTPS RPC endpoint and all VITE_*_CONTRACT values to be explicit mainnet contract IDs.";
+    return "Mainnet requires VITE_STELLAR_RPC_URL to point to a production HTTPS RPC endpoint and mainnet contract IDs in deployments/v1/mainnet.json or VITE_MAINNET_* env vars.";
   }
   return `Set VITE_STELLAR_NETWORK to one of: ${SUPPORTED_NETWORKS.join(", ")}.`;
 }
